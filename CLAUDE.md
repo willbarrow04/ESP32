@@ -47,21 +47,36 @@ All credentials and the TLS CA bundle live in `src/secrets.h` as `#define` macro
 
 ## Backend API
 
-- Base URL: `https://<app>.azurewebsites.net`
+- Base URL: `https://bp-core-demo-orchestrator.azurewebsites.us` (Azure Government)
 - All routes prefixed `/v1`
 - Auth: `Authorization: Bearer <BACKEND_API_KEY>` on every request
 - Milestone endpoint: `GET /v1/models` → JSON list of allowed model IDs
 
 Pre-flight check (no firmware needed):
 ```bash
-curl -H "Authorization: Bearer <KEY>" https://<app>.azurewebsites.net/v1/models
+curl -H "Authorization: Bearer <KEY>" https://bp-core-demo-orchestrator.azurewebsites.us/v1/models
 ```
+
+## Entra ID (Azure AD)
+
+Tenant: `a85d2dcc-2ae1-4bb9-bfe2-b4d4f5eb8910`
+
+| App registration | Application ID |
+|---|---|
+| `bluepartner-spa-dev` (React SPA) | `b4fd7c41-f926-44e8-8685-a48990eb2db0` |
+| `bluepartner-api-dev` (backend) | `7c8cb1ee-710c-4b57-a58a-d0f8e3b778b1` |
+
+API scope: `api://7c8cb1ee-710c-4b57-a58a-d0f8e3b778b1/access_as_user`
+
+Application roles (defined on `bluepartner-api-dev`): `System.Admin`, `Agency.Admin`, `Reviewer`, `Officer`
+
+The firmware uses a static bearer key (`BACKEND_API_KEY`), not MSAL tokens — Entra ID token flow is for the React SPA only at this stage.
 
 ## TLS policy
 
 - **`WiFiClientSecure::setCACert()`** always. `setInsecure()` is never used.
-- Trust bundle = DigiCert Global Root **G2 + G3** concatenated in one PEM string. Azure `*.azurewebsites.net` certs may chain to either root and can rotate without notice; trusting both survives that.
-- Source for PEMs: DigiCert's published root-certificate page. Do not hand-type or invent certificate text — one wrong character causes a silent handshake failure.
+- The backend is on Azure Government (`*.azurewebsites.us`). Verify the actual root CA with `openssl s_client -connect bp-core-demo-orchestrator.azurewebsites.us:443 -showcerts` before populating `DIGICERT_CA_BUNDLE`. Government cloud may chain to DigiCert Global Root CA (original) or Microsoft RSA Root CA 2017 — do not assume the commercial G2/G3 roots apply.
+- Do not hand-type or invent certificate text — one wrong character causes a silent handshake failure.
 - NTP sync is mandatory before any TLS call. A freshly booted ESP32 thinks it's 1970; every cert looks "not yet valid" until the clock is set. `syncNTP()` blocks until `tm_year ≥ 2024`.
 
 ## Retry policy
