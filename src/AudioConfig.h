@@ -27,17 +27,30 @@ static constexpr uint16_t AUDIO_BLOCK_ALIGN = AUDIO_CHANNELS
 // in IDF 5.x but still compiles via the compat layer in Arduino-ESP32 3.x.
 // Migrate to driver/i2s_std.h before production if compiler warnings appear.
 //
-// TODO(pin-config): Verify these GPIO numbers against your board schematic
-// before first flash.  INMP441 wiring:
-//   VDD → 3.3 V,  GND → GND,  L/R → GND (selects left channel output)
-//   SCK → I2S_SCK_PIN (bit clock)
-//   WS  → I2S_WS_PIN  (word select / LRCK)
-//   SD  → I2S_SD_PIN  (serial data out from mic)
+// Breadboard wiring (finalized 2026-07-01):
+//
+// INMP441 mic:
+//   VDD → 3.3 V rail  (1 µF + 0.1 µF bypass caps to GND rail, separate BB rows)
+//   GND → GND rail
+//   L/R → GND rail  (selects left channel; I2S_CHANNEL_FMT_ONLY_LEFT in driver)
+//   SCK → GPIO 4  (I2S_SCK_PIN — shared bus line with MAX98357A BCLK)
+//   WS  → GPIO 5  (I2S_WS_PIN  — shared bus line with MAX98357A LRC)
+//   SD  → GPIO 6  (I2S_SD_PIN  — mic data, input only)
+//
+// MAX98357A amplifier:
+//   BCLK → GPIO 4  (shared with INMP441 SCK)
+//   LRC  → GPIO 5  (shared with INMP441 WS)
+//   DIN  → GPIO 7  (I2S_DOUT_PIN — speaker data out from ESP32)
+//   GAIN → 100 kΩ to GND rail  (sets +9 dB gain; passive, no GPIO)
+//   SD   → 100 kΩ to Vin rail  (keeps amp enabled; passive, no GPIO)
+//   GND  → GND rail  (10 µF + 0.1 µF bypass caps to GND)
+//   Vin  → 3.3 V / 5 V rail  (10 µF + 0.1 µF bypass caps to Vin)
 
 #define I2S_MIC_PORT_NUM  0     // numeric value of I2S_NUM_0; cast where i2s_port_t needed
-#define I2S_SCK_PIN       14    // TODO: confirm GPIO
-#define I2S_WS_PIN        15    // TODO: confirm GPIO
-#define I2S_SD_PIN        32    // TODO: confirm GPIO (INMP441 data)
+#define I2S_SCK_PIN       4     // I2S bit clock — INMP441 SCK + MAX98357A BCLK
+#define I2S_WS_PIN        5     // I2S word select — INMP441 WS + MAX98357A LRC
+#define I2S_SD_PIN        6     // INMP441 serial data (mic input)
+#define I2S_DOUT_PIN      7     // MAX98357A DIN (speaker output)
 #define I2S_DMA_BUF_CNT   8    // DMA buffer count
 #define I2S_DMA_BUF_LEN   512  // samples per DMA buffer
 
@@ -45,8 +58,10 @@ static constexpr uint16_t AUDIO_BLOCK_ALIGN = AUDIO_CHANNELS
 #define I2S_READ_SAMPLES  I2S_DMA_BUF_LEN
 
 // ── SD card (SPI) ─────────────────────────────────────────────────────────────
-// TODO(pin-config): Set SD_CS_PIN to your chip-select GPIO.
+// TODO(pin-config): SD_CS_PIN needs a new GPIO assignment — GPIO 5 is now
+// occupied by I2S_WS_PIN (see above).  Set this to whatever chip-select line
+// you wire on the breadboard before first flash.
 // If your board uses non-default SPI pins (not the ESP32-S3 default 11/13/12),
 // call SPI.begin(sck, miso, mosi) in setup() before SD.begin().
 
-#define SD_CS_PIN  5    // TODO: confirm GPIO
+#define SD_CS_PIN  5    // CONFLICT: GPIO 5 is now I2S_WS_PIN — assign a free GPIO here
