@@ -140,7 +140,7 @@ Pin assignments (finalized 2026-07-01 from breadboard wiring):
 | `I2S_WS_PIN` | 5 | INMP441 WS + MAX98357A LRC (shared bus) |
 | `I2S_SD_PIN` | 6 | INMP441 SD (mic data in) |
 | `I2S_DOUT_PIN` | 7 | MAX98357A DIN (speaker data out) |
-| `SD_CS_PIN` | **TBD** | Was GPIO 5 — conflicts with `I2S_WS_PIN`; assign a free GPIO |
+| `SD_CS_PIN` | 10 | SD card chip select |
 
 MAX98357A passive connections (no GPIO): GAIN → 100 kΩ → GND (sets +9 dB); SD → 100 kΩ → Vin (always enabled). Both ICs use standard 1 µF + 0.1 µF bypass cap bridges on VDD/GND.
 
