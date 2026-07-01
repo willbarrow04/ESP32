@@ -58,7 +58,10 @@ static constexpr uint16_t AUDIO_BLOCK_ALIGN = AUDIO_CHANNELS
 #define I2S_READ_SAMPLES  I2S_DMA_BUF_LEN
 
 // ── SD card (SPI) ─────────────────────────────────────────────────────────────
+// TODO(pin-config): SD_CS_PIN needs a new GPIO assignment — GPIO 5 is now
+// occupied by I2S_WS_PIN (see above).  Set this to whatever chip-select line
+// you wire on the breadboard before first flash.
 // If your board uses non-default SPI pins (not the ESP32-S3 default 11/13/12),
 // call SPI.begin(sck, miso, mosi) in setup() before SD.begin().
 
-#define SD_CS_PIN  10   // SD card chip select
+#define SD_CS_PIN 10   // was 5 (CONFLICT with I2S_WS) — matches breadboard: CS → GPIO 10
